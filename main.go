@@ -19,6 +19,7 @@ type y struct {
 	a int16
 }
 
+// https://stackoverflow.com/questions/40559250/golang-dynamically-creating-member-of-struct
 func main() {
 	// typ := reflect.StructOf([]reflect.StructField{{
 	// 	Name: "Height",

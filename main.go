@@ -8,36 +8,55 @@ import (
 
 // Person cost
 type x struct {
-	a int16
-	b int64
-	c int32
+	A int64
+	B int
+	C int8
+	E int8
+	D float64
 }
 
-type y struct {
-	b int64
-	c int32
-	a int16
-}
-
-// https://stackoverflow.com/questions/40559250/golang-dynamically-creating-member-of-struct
 func main() {
-	// typ := reflect.StructOf([]reflect.StructField{{
-	// 	Name: "Height",
-	// 	Type: reflect.TypeOf(int64(0)),
-	// 	Tag:  `cost:"height"`,
-	// }})
-	t := reflect.StructField{
-		Name: "Height",
-		Type: reflect.TypeOf(int64(0)),
-		Tag:  `cost:"height"`,
-	}
+	y := createStruct()
+	fmt.Println("size", y, unsafe.Sizeof(x{}))
+}
 
-	// v := reflect.New(typ).Elem()
-	// fmt.Println(v.Kind(), unsafe.Sizeof(v))
-	fmt.Println(unsafe.Sizeof(t), unsafe.Sizeof(y{}))
-	rt := t.Type
-	for i := 0; i < rt.NumField(); i++ {
-		fmt.Println(rt.Field(i).Name)
-	}
+func genCombination() {}
 
+func createStruct() uintptr {
+	typ := reflect.StructOf([]reflect.StructField{
+		{
+			Name: "A",
+			Type: reflect.TypeOf(int64(0)),
+			Tag:  `tag:"a"`,
+		},
+		{
+			Name: "B",
+			Type: reflect.TypeOf(int(0)),
+			Tag:  `tag:"b"`,
+		},
+		{
+			Name: "C",
+			Type: reflect.TypeOf(int8(0)),
+			Tag:  `tag:"c"`,
+		},
+		{
+			Name: "E",
+			Type: reflect.TypeOf(int8(0)),
+			Tag:  `tag:"e"`,
+		},
+		{
+			Name: "D",
+			Type: reflect.TypeOf(float64(0)),
+			Tag:  `tag:"d"`,
+		},
+	})
+
+	v := reflect.New(typ).Elem()
+	v.Field(0).SetInt(0)
+	v.Field(1).SetInt(0)
+	v.Field(2).SetInt(0)
+	v.Field(3).SetInt(0)
+	v.Field(4).SetFloat(0)
+
+	return v.Type().Size()
 }

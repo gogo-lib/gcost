@@ -2,61 +2,99 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"reflect"
+	"sort"
 	"unsafe"
 )
 
 // Person cost
 type x struct {
-	A int64
-	B int
-	C int8
-	E int8
-	D float64
+	a int8
+	b int64
+	c int16
 }
 
 func main() {
-	y := createStruct()
-	fmt.Println("size", y, unsafe.Sizeof(x{}))
+	rt := reflect.TypeOf(x{})
+
+	start := make([]int, rt.NumField())
+	for i := 0; i < rt.NumField(); i++ {
+		start[i] = i
+	}
+	calcSizeFunc := calcSizeFunc(rt)
+	var min uintptr = math.MaxUint
+	rs := map[uintptr][]string{}
+	for start != nil {
+		size, rawStructTmp := calcSizeFunc(start)
+		if size <= min {
+			rs[size] = append(rs[size], rawStructTmp)
+			min = size
+		}
+		start = nextPermutation(start)
+	}
+	fmt.Println("current size: ", unsafe.Sizeof(x{}))
+	fmt.Println("min size: ", min)
+	fmt.Println("variations:")
+	for _, v := range rs[min] {
+		fmt.Println(v)
+	}
+
 }
 
-func genCombination() {}
+func nextPermutation(nums []int) []int {
+	numsLen := len(nums)
+	first := -1
+	second := -1
 
-func createStruct() uintptr {
-	typ := reflect.StructOf([]reflect.StructField{
-		{
-			Name: "A",
-			Type: reflect.TypeOf(int64(0)),
-			Tag:  `tag:"a"`,
-		},
-		{
-			Name: "B",
-			Type: reflect.TypeOf(int(0)),
-			Tag:  `tag:"b"`,
-		},
-		{
-			Name: "C",
-			Type: reflect.TypeOf(int8(0)),
-			Tag:  `tag:"c"`,
-		},
-		{
-			Name: "E",
-			Type: reflect.TypeOf(int8(0)),
-			Tag:  `tag:"e"`,
-		},
-		{
-			Name: "D",
-			Type: reflect.TypeOf(float64(0)),
-			Tag:  `tag:"d"`,
-		},
-	})
+	for i, j := numsLen-2, numsLen-1; i >= 0; {
+		if nums[i] < nums[j] {
+			first = i
+			second = j
+			break
+		} else {
+			i--
+			j--
+		}
+	}
 
-	v := reflect.New(typ).Elem()
-	v.Field(0).SetInt(0)
-	v.Field(1).SetInt(0)
-	v.Field(2).SetInt(0)
-	v.Field(3).SetInt(0)
-	v.Field(4).SetFloat(0)
+	if !(first == -1) {
+		smallestGreaterIndex := second
+		for i := second + 1; i < numsLen; i++ {
+			if nums[i] > nums[first] && nums[i] < nums[smallestGreaterIndex] {
+				smallestGreaterIndex = i
+			}
+		}
+		nums[first], nums[smallestGreaterIndex] = nums[smallestGreaterIndex], nums[first]
 
-	return v.Type().Size()
+		sort.Slice(nums[second:numsLen], func(i, j int) bool {
+			return nums[second+i] < nums[second+j]
+		})
+	} else {
+		return nil
+	}
+
+	return nums
+}
+
+func calcSizeFunc(rt reflect.Type) func(order []int) (uintptr, string) {
+	var listStructField []reflect.StructField
+	for i := 0; i < rt.NumField(); i++ {
+		listStructField = append(listStructField, rt.Field(i))
+	}
+
+	return func(order []int) (uintptr, string) {
+		var tmpStructField []reflect.StructField
+		for _, v := range order {
+			tmpStructField = append(tmpStructField, reflect.StructField{
+				Name:    listStructField[v].Name,
+				Type:    listStructField[v].Type,
+				PkgPath: listStructField[v].PkgPath,
+			})
+		}
+		structType := reflect.StructOf(tmpStructField)
+
+		return structType.Size(), structType.String()
+	}
+
 }
